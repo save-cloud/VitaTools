@@ -1099,7 +1099,7 @@ int ZipExtractCurrentFile(Zip *zip, int *nopath, const char *password, const cha
 		if((*nopath) == 0)
 		{
 			//printf("Creating directory: %s\n", filenameinzip);
-			sce_paf_private_sprintf(extract_path, "%s/%s", path, filenameinzip);
+			sce_paf_sprintf(extract_path, "%s/%s", path, filenameinzip);
 			sceIoMkdir(extract_path, 0777);
 		}
 	}
@@ -1117,9 +1117,9 @@ int ZipExtractCurrentFile(Zip *zip, int *nopath, const char *password, const cha
 		if(err != _ZIP_OK)
 			printf("Error with zipfile in ZipOpenCurrentFile\n");
 		
-		sce_paf_private_sprintf(extract_path, "%s/%s", path, writeFilename);
+		sce_paf_sprintf(extract_path, "%s/%s", path, writeFilename);
 		*(filenameWithoutPath - 1) = '\0';
-		sce_paf_private_sprintf(dir_gen_fix, "%s/%s", path, writeFilename);
+		sce_paf_sprintf(dir_gen_fix, "%s/%s", path, writeFilename);
 		fout = fopen(extract_path, "wb");
 		if (fout == NULL) {
 			mkdir_rec(dir_gen_fix);
