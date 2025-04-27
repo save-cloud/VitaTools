@@ -2,6 +2,7 @@
 
 #include <psp2/io/dirent.h>
 #include <psp2/io/fcntl.h>
+#include <psp2/io/stat.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/modulemgr.h>
 
@@ -24,7 +25,7 @@ static tai_hook_ref_t GetFileTypeRef;
 static const unsigned char nop32[4] = { 0xaf, 0xf3, 0x00, 0x80 };
 
 static int ExportFilePatched(uint32_t* data) {
-    
+
     int res = TAI_CONTINUE(int, ExportFileRef, data);
 
     if (res == 0x80101A09) {
@@ -42,7 +43,7 @@ static int ExportFilePatched(uint32_t* data) {
         uint16_t cur_off = 0xD3;
         SceUID fd = sceIoOpen(bgdl_path, SCE_O_RDONLY, 0);
         if (fd < 0)
-            return fd;
+            return 0x80101A09;
         sceIoPread(fd, flags, 0xB, 0xD3); // read title flags
         sceIoPread(fd, dl_title, *(uint16_t*)(flags + 3), 0xDE); // read the title itself
         cur_off -= -(*(uint16_t*)(flags + 3) + 0xC);
@@ -63,9 +64,9 @@ static int ExportFilePatched(uint32_t* data) {
             vpk = (file_name[vpk - 4] == '.' && file_name[vpk - 3] == 'v' && file_name[vpk - 2] == 'p' && file_name[vpk - 1] == 'k');
         else
             vpk = 0;
-        
+
         sceClibSnprintf(bgdl_path, sizeof(bgdl_path), "ux0:bgdl/t/%08x/%s", num, file_name);
-        
+
         // If custom bgdled or a VPK - install
         if (cbg || vpk) {
             // Get additional param (optional)
@@ -84,7 +85,7 @@ static int ExportFilePatched(uint32_t* data) {
                 }
             } else
                 dl_target = vpk;
-            
+
             // Ask the user if they want to install the app
             int reply = 1;
             if (show_dlg && dl_target) {
@@ -97,7 +98,7 @@ static int ExportFilePatched(uint32_t* data) {
                 dialog_close();
                 dialog_deinit();
             }
-            
+
             // Install the app
             if (reply) {
                 // Unzip the VPK to temp bgdl folder/X/ | Unzip the zip to ux0:data/
@@ -109,16 +110,16 @@ static int ExportFilePatched(uint32_t* data) {
                     return -1;
                 if (!dl_target)
                     return 0;
-                
+
                 // Install/promote the app
                 res = promoteApp(download_path);
-                
+
                 // TODO: Notif "installed"
-                
+
                 return res;
             }
         }
-            
+
 save_file: // Save the downloaded file to ux0:download/*
         sceClibSnprintf(download_path, sizeof(download_path), "ux0:download/%s", file_name);
         res = sceIoMkdir("ux0:download", 0006);
@@ -148,7 +149,7 @@ int module_start(SceSize args, void* argp) {
     den_info.size = sizeof(den_info);
     if (taiGetModuleInfo("DownloadEnabler", &den_info) >= 0)
         sceKernelStopUnloadModule(den_info.modid, 0, NULL, 0, NULL, NULL);
-    
+
     tai_module_info_t info;
     info.size = sizeof(info);
     uint32_t get_off, exp_off, rec_off, lock_off;
