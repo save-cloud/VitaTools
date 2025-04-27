@@ -8,20 +8,20 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   endif()
 endif()
 
-project(bgvpk)
+project(scbgdl)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -Wall -O3 -nostdlib")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
 
-add_executable(bgvpk
+add_executable(scbgdl
   main.c
   libc2paf.c
   Archives.c
   sha1.c
 )
 
-target_link_libraries(bgvpk
+target_link_libraries(scbgdl
   SceIofilemgr_stub
   SceLibKernel_stub
   taihen_stub
@@ -35,4 +35,4 @@ target_link_libraries(bgvpk
   z
 )
 
-vita_create_self(bgvpk.suprx bgvpk CONFIG exports.yml UNSAFE)
+vita_create_self(scbgdl.suprx scbgdl CONFIG exports.yml UNSAFE)
