@@ -34,13 +34,12 @@ int load_bgvpk(void) {
 */
 int add_bgvpk_params(int bgdlid, int show_dialog, int vpk, const char *caller_id) {
 	char export_cfg_path[128];
-	bgvpk_export_param_struct export_params;
+	scbgdl_export_param_struct export_params;
 	export_params.magic = (BGVPK_MAGIC | BGVPK_CFG_VER);
-	export_params.show_dlg = show_dialog;
 	export_params.target = vpk;
 	if (caller_id)
-		sceClibStrncpy(export_params.titleid, caller_id, 11);
-	sceClibSnprintf(export_cfg_path, sizeof(export_cfg_path), "ux0:bgdl/t/%08x/export_param.ini", bgdlid);
+		sceClibStrncpy(export_params.title_id, caller_id, 11);
+	sceClibSnprintf(export_cfg_path, sizeof(export_cfg_path), "ux0:bgdl/t/%08x/scbgdl_param.ini", bgdlid);
 	int fd = sceIoOpen(export_cfg_path, SCE_O_WRONLY | SCE_O_TRUNC | SCE_O_CREAT, 0777);
 	if (fd < 0)
 		return fd;

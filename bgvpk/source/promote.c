@@ -75,7 +75,7 @@ static void fpkg_hmac(const uint8_t* data, unsigned int len, uint8_t hmac[16]) {
     memcpy(hmac, sha1, 16);
 }
 
-int makeHead(const char *path) {
+int makeHead(const char *path, char *titleid) {
     char tmp_path[1088];
     uint8_t hmac[16];
     uint32_t off;
@@ -98,7 +98,6 @@ int makeHead(const char *path) {
     sceIoClose(fd);
 
     // Get title id
-    char titleid[12];
     memset(titleid, 0, sizeof(titleid));
     getSfoString(sfo_buffer, "TITLE_ID", titleid, sizeof(titleid));
 
@@ -155,9 +154,9 @@ int makeHead(const char *path) {
     return res;
 }
 
-int promoteApp(const char* path) {
+int promoteApp(const char* path, char *title_id) {
     sceClibPrintf("promote %s\n", path);
-    int res = makeHead(path);
+    int res = makeHead(path, title_id);
     if (res < 0)
         return res;
 

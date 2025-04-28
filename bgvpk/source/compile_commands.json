@@ -1,0 +1,8 @@
+[
+  {
+    "directory": "/Users/yuuko/develop/psv/VitaTools/bgvpk/source",
+    "command": "/Users/yuuko/vitasdk/bin/arm-vita-eabi-gcc  -isystem /Users/yuuko/vitasdk/arm-vita-eabi/include  -Wl,-q -std=gnu11 -o CMakeFiles/save-cloud.dir/mainl.c.obj -c /Users/yuuko/develop/psv/VitaTools/bgvpk/source/main.c",
+    "file": "/Users/yuuko/develop/psv/VitaTools/bgvpk/source/main.c",
+    "output": "CMakeFiles/save-cloud.dir/tai.c.obj"
+  }
+]

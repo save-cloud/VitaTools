@@ -22,6 +22,7 @@ add_executable(scbgdl
 )
 
 target_link_libraries(scbgdl
+  SceKernelModulemgr_stub
   SceIofilemgr_stub
   SceLibKernel_stub
   taihen_stub
@@ -31,7 +32,6 @@ target_link_libraries(scbgdl
   SceKernelThreadMgr_stub
   SceAppMgr_stub
   SceShellSvc_stub_weak
-  SceIncomingDialog_stub_weak
   z
 )
 
