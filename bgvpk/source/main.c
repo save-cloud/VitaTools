@@ -50,7 +50,7 @@ static int ExportFilePatched(uint32_t* data) {
     if (res == BGDL_DETECT_CODE) {
         char download_path[1024];
         char bgdl_path[1024];
-        char file_name[128];
+        char file_name[256];
         char dl_title[64];
         char flags[0xB];
         uint32_t num = *(uint32_t*)data[0];
@@ -112,22 +112,48 @@ static int ExportFilePatched(uint32_t* data) {
             // Install/promote the app
             char title_id[12];
             if (res == 0 && promoteApp(download_path, title_id) >= 0) {
-              notification_send(title_id, dl_title, 0x52, 0x3, dl_title);
+                notification_send(title_id, dl_title, 0x52, 0x3, dl_title);
             } else {
-              notification_send(export_params.title_id, dl_title, 0x0, 0x3, dl_title);
+                notification_send(export_params.title_id, dl_title, 0x0, 0x3, dl_title);
             }
         } else {
-          // Save the downloaded file to ux0:download/*
-          sceClibSnprintf(download_path, sizeof(download_path), "ux0:download/%s", file_name);
-          res = sceIoMkdir("ux0:download", 0006);
-          if (res >= 0 || res == 0x80010011) {
-              sceIoRemove(download_path);
-              res = sceIoRename(bgdl_path, download_path);
-              sceClibSnprintf(download_path, sizeof(download_path), "%s %s", dl_title, "下载成功");
-          } else {
-              sceClibSnprintf(download_path, sizeof(download_path), "%s %s", dl_title, "下载失败");
-          }
-          notification_send(export_params.title_id, download_path, 0x100, 0x2, dl_title);
+            // Save the downloaded file to ux0:download/*
+            char *ext = sceClibStrchr(file_name, '.');
+            char short_name[256];
+            if (ext) {
+                int len = ext - file_name;
+                if (len > sizeof(short_name)-1)
+                  len = sizeof(short_name)-1;
+                sceClibStrncpy(short_name, file_name, len);
+                short_name[len] = '\0';
+            } else {
+                sceClibStrncpy(short_name, file_name, sizeof(short_name));
+                ext = "";
+            }
+            int count = 0;
+            while (1) {
+                if (count == 0) {
+                    sceClibSnprintf(download_path, sizeof(download_path)-1, "ux0:download/%s", file_name);
+                } else {
+                    sceClibSnprintf(download_path, sizeof(download_path)-1, "ux0:download/%s (%d)%s", short_name, count, ext);
+                }
+
+                SceIoStat stat;
+                sceClibMemset(&stat, 0, sizeof(SceIoStat));
+                if (sceIoGetstat(download_path, &stat) < 0)
+                  break;
+
+                count++;
+            }
+            res = sceIoMkdir("ux0:download", 0006);
+            if (res >= 0 || res == 0x80010011) {
+                sceIoRemove(download_path);
+                res = sceIoRename(bgdl_path, download_path);
+                sceClibSnprintf(download_path, sizeof(download_path), "%s %s", dl_title, "下载成功");
+            } else {
+                sceClibSnprintf(download_path, sizeof(download_path), "%s %s", dl_title, "下载失败");
+            }
+            notification_send(export_params.title_id, download_path, 0x100, 0x2, dl_title);
         }
     }
 
