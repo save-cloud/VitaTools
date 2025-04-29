@@ -160,6 +160,12 @@ int promoteApp(const char* path, char *title_id) {
     if (res < 0)
         return res;
 
+    // close title_id if it is running
+    int pid = 0;
+    if (sceAppMgrGetIdByName(&pid, title_id) >= 0 && pid != 0) {
+      sceAppMgrDestroyAppByName(title_id);
+    }
+
     sceSysmoduleLoadModuleInternal(SCE_SYSMODULE_INTERNAL_PROMOTER_UTIL);
 
     res = scePromoterUtilityInit();
