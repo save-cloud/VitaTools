@@ -33,7 +33,7 @@ int ToastPatch(void *off, unsigned int arg)
     if(!arg && off != NULL)
     {
         char download_path[1024];
-        sceClibSnprintf(download_path, sizeof(download_path), "ux0:bgdl/t/%08x/scbgdl.installed", *(uint32_t *)off);
+        sceClibSnprintf(download_path, sizeof(download_path), "ux0:bgdl/t/%08x/scbgdl_param.ini", *(uint32_t *)off);
         SceIoStat stat;
         if(sceIoGetstat(download_path, &stat) >= 0) {
             return 0; // Notification should already be handled in export function
@@ -99,11 +99,6 @@ static int ExportFilePatched(uint32_t* data) {
         sceIoClose(fd);
         /*/ read d0.pdb */
 
-        // stop notification
-        sceClibSnprintf(download_path, sizeof(download_path), "ux0:bgdl/t/%08x/scbgdl_param.ini", num);
-        sceClibSnprintf(bgdl_path, sizeof(bgdl_path), "ux0:bgdl/t/%08x/scbgdl.installed", num);
-        sceIoRename(download_path, bgdl_path);
-
         // the path of download file
         sceClibSnprintf(bgdl_path, sizeof(bgdl_path), "ux0:bgdl/t/%08x/%s", num, file_name);
 
@@ -114,16 +109,12 @@ static int ExportFilePatched(uint32_t* data) {
             Zip* handle = ZipOpen(bgdl_path);
             res = ZipExtract(handle, NULL, download_path);
             ZipClose(handle);
-            if (res == 0) {
-              // Install/promote the app
-              res = promoteApp(download_path, export_params.title_id);
-              if (res) {
-                sceClibSnprintf(download_path, sizeof(download_path), "%s\n%s", dl_title, "安装成功");
-                notification_send(export_params.title_id, download_path, 0x52, 0x3);
-              }
+            // Install/promote the app
+            char title_id[12];
+            if (res == 0 && promoteApp(download_path, title_id) >= 0) {
+              notification_send(title_id, dl_title, 0x52, 0x3, dl_title);
             } else {
-              sceClibSnprintf(download_path, sizeof(download_path), "%s\n%s", dl_title, "安装失败");
-              notification_send(export_params.title_id, download_path, 0x51, 0x2);
+              notification_send(export_params.title_id, dl_title, 0x0, 0x3, dl_title);
             }
         } else {
           // Save the downloaded file to ux0:download/*
@@ -132,11 +123,11 @@ static int ExportFilePatched(uint32_t* data) {
           if (res >= 0 || res == 0x80010011) {
               sceIoRemove(download_path);
               res = sceIoRename(bgdl_path, download_path);
-              sceClibSnprintf(download_path, sizeof(download_path), "%s\n%s", dl_title, "下载成功");
+              sceClibSnprintf(download_path, sizeof(download_path), "%s %s", dl_title, "下载成功");
           } else {
-              sceClibSnprintf(download_path, sizeof(download_path), "%s\n%s", dl_title, "下载失败");
+              sceClibSnprintf(download_path, sizeof(download_path), "%s %s", dl_title, "下载失败");
           }
-          notification_send(export_params.title_id, download_path, 0x51, 0x2);
+          notification_send(export_params.title_id, download_path, 0x100, 0x2, dl_title);
         }
     }
 
@@ -166,7 +157,7 @@ int module_start(SceSize args, void* argp) {
     tai_module_info_t info;
     info.size = sizeof(info);
     uint32_t get_off, exp_off, rec_off, lock_off, notif_off;
-    if (taiGetModuleInfo("SceShell", &info) >= 0 && get_shell_offsets(info.module_nid, &get_off, &exp_off, &rec_off, &lock_off) >= 0) {
+    if (taiGetModuleInfo("SceShell", &info) >= 0 && get_shell_offsets(info.module_nid, &get_off, &exp_off, &rec_off, &lock_off, &notif_off) >= 0) {
         hooks[0] = taiInjectData(info.modid, 0, get_off, "GET", 4);
         if (hooks[0] >= 0) { // we use the fact that there can be only one tai inject per offset to make sure we dont hook twice
             hooks[1] = taiHookFunctionOffset(&ExportFileRef, info.modid, 0, exp_off, 1, ExportFilePatched);

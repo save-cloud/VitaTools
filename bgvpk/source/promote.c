@@ -99,7 +99,7 @@ int makeHead(const char *path, char *titleid) {
 
     // Get title id
     memset(titleid, 0, sizeof(titleid));
-    getSfoString(sfo_buffer, "TITLE_ID", titleid, sizeof(titleid));
+    getSfoString(sfo_buffer, "TITLE_ID", titleid, 12);
 
     // Get content id
     char contentid[48];

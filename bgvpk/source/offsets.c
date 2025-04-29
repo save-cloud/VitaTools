@@ -1,5 +1,5 @@
 // This is pain
-int get_shell_offsets(uint32_t nid, uint32_t *a1, uint32_t *a2, uint32_t *a3, uint32_t *a4) {
+int get_shell_offsets(uint32_t nid, uint32_t *a1, uint32_t *a2, uint32_t *a3, uint32_t *a4, uint32_t *a5) {
     *a1 = *a2 = *a3 = *a4 = 0;
     switch (nid) {
     case 0x0552F692: // 3.60 retail
@@ -8,6 +8,7 @@ int get_shell_offsets(uint32_t nid, uint32_t *a1, uint32_t *a2, uint32_t *a3, ui
         *a2 = 0x1163F6;
         *a3 = 0x11B5E4;
         *a4 = 0x2c2f8;
+        *a5 = 0xFD8F4;
         break;
     }
 
@@ -16,6 +17,7 @@ int get_shell_offsets(uint32_t nid, uint32_t *a1, uint32_t *a2, uint32_t *a3, ui
         *a1 = 0x4F9A18;
         *a2 = 0x111D5A;
         *a3 = 0x116F48;
+        *a5 = 0xF9258;
         // MISSING OFFSET
         break;
     }
@@ -26,6 +28,7 @@ int get_shell_offsets(uint32_t nid, uint32_t *a1, uint32_t *a2, uint32_t *a3, ui
         *a2 = 0x112756;
         *a3 = 0x117944;
         *a4 = 0x2c464;
+        *a5 = 0xF9C54;
         break;
     }
 
@@ -37,6 +40,7 @@ int get_shell_offsets(uint32_t nid, uint32_t *a1, uint32_t *a2, uint32_t *a3, ui
         *a2 = 0x11644E;
         *a3 = 0x11B63C;
         *a4 = 0x2c350;
+        *a5 = 0xFD94C;
         break;
     }
 
@@ -50,6 +54,7 @@ int get_shell_offsets(uint32_t nid, uint32_t *a1, uint32_t *a2, uint32_t *a3, ui
         *a2 = 0x11644E;
         *a3 = 0x11B63C;
         *a4 = 0x2c350;
+        *a5 = 0xFD94C;
         break;
     }
 
@@ -59,6 +64,7 @@ int get_shell_offsets(uint32_t nid, uint32_t *a1, uint32_t *a2, uint32_t *a3, ui
         *a2 = 0x111DB2;
         *a3 = 0x116FA0;
         *a4 = 0x2c248;
+        *a5 = 0xF92B0;
         break;
     }
 
@@ -68,12 +74,13 @@ int get_shell_offsets(uint32_t nid, uint32_t *a1, uint32_t *a2, uint32_t *a3, ui
         *a2 = 0x1127AE;
         *a3 = 0x11799C;
         *a4 = 0x2c4bc;
+        *a5 = 0xF9CAC;
         break;
     }
     default:
         return -1;
     }
-    if (!*a1 || !*a2 || !*a3 || !*a4)
+    if (!*a1 || !*a2 || !*a3 || !*a4 || !*a5)
         return -1;
     return 0;
 }

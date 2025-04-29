@@ -1,5 +1,15 @@
 // Based on BGDL PoC by FAPS team
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <vitasdk.h>
+#include <taihen.h>
+
+#include "../bgvpk.h"
+
+static unsigned char is_bgdl_init = 0;
+
 typedef struct ipmi_download_param {
     int type[2];
     char unk_0x08[0x68];
@@ -92,14 +102,14 @@ typedef struct scedownload_class {
 } scedownload_class;
 
 // sceIpmiCreateDownloadTask?
-int (*SceIpmi_4E255C31)(const char* name, int unk);
+static int (*SceIpmi_4E255C31)(const char* name, int unk);
 
 // sceIpmiInitDownloadTask?
-int (*SceIpmi_B282B430)(uint32_t*** func_table, const char* name, scedownload_class_header* class_header, uint32_t* buf10000);
+static int (*SceIpmi_B282B430)(uint32_t*** func_table, const char* name, scedownload_class_header* class_header, uint32_t* buf10000);
 
 static scedownload_class some_class;
 
-int init_download_class(scedownload_class* class) {
+static int init_download_class(scedownload_class* class) {
 
     memset(class, 0, sizeof(scedownload_class));
 
@@ -153,7 +163,7 @@ int init_download_class(scedownload_class* class) {
     return res;
 }
 
-int scedownload_start(scedownload_class* class, const char* title, const char* url, const char* icon, int* bgdlid) {
+static int scedownload_start(scedownload_class* class, const char* title, const char* url, const char* icon, int* bgdlid) {
     uint32_t result = 1;
     *bgdlid = 1;
 
@@ -182,10 +192,7 @@ int scedownload_start(scedownload_class* class, const char* title, const char* u
     params.shell_func_8 = (*(class->class_header->func_table))[8];
 
     strcpy((char*)params.init.addr_DC0->url, url);
-    if (title)
-        strcpy((char*)params.init.addr_DC0->title, title);
-    else
-        strcpy((char*)params.init.addr_DC0->title, "background download");
+    strcpy((char*)params.init.addr_DC0->title, title);
     if (icon)
         strcpy((char*)params.init.addr_DC0->icon_path, icon);
 
@@ -216,18 +223,53 @@ int scedownload_start(scedownload_class* class, const char* title, const char* u
 }
 
 // Inits the BGDL svc, call it once on startup
-int bgdl_init() {
-    sceKernelLoadStartModule("vs0:sys/external/libshellsvc.suprx", 0, NULL, 0, NULL, NULL);
+int bgdl_init(const char *scbgdl_plugin) {	tai_module_args_t args;
+    if (is_bgdl_init) {
+      return 0;
+    }
+    is_bgdl_init = 1;
+    int pid = 0;
+    if (sceAppMgrGetIdByName(&pid, "NPXS19999") >= 0 && pid != 0) {
+      args.size = sizeof(args);
+      args.pid = pid;
+      args.args = 0;
+      args.argp = NULL;
+      args.flags = 0;
+      if(taiLoadStartModuleForPidForUser(scbgdl_plugin, &args) >= 0) {
+        sceKernelLoadStartModule("vs0:sys/external/libshellsvc.suprx", 0, NULL, 0, NULL, NULL);
 
-    if (taiGetModuleExportFunc("SceShellSvc", 0xF4E34EDB, 0x4E255C31, (uintptr_t*)&SceIpmi_4E255C31) < 0
-        || taiGetModuleExportFunc("SceShellSvc", 0xF4E34EDB, 0xB282B430, (uintptr_t*)&SceIpmi_B282B430) < 0)
-        return -1;
-    
-    return init_download_class(&some_class);
+        if (taiGetModuleExportFunc("SceShellSvc", 0xF4E34EDB, 0x4E255C31, (uintptr_t*)&SceIpmi_4E255C31) < 0
+            || taiGetModuleExportFunc("SceShellSvc", 0xF4E34EDB, 0xB282B430, (uintptr_t*)&SceIpmi_B282B430) < 0)
+            return -1;
+
+        return init_download_class(&some_class);
+      }
+    } else {
+      return -1;
+    }
+
+    return -1;
 }
 
 // Queue a BG DL of [url] with title [title] and dl icon from [icon_path], returns bgdlid on success 
-int bgdl_queue(const char *title, const char *url, const char *icon_path) {
+int bgdl_queue(int install, const char *title, const char *url, const char *icon_path, const char *title_id) {
     int bgdlid = 0;
-    return scedownload_start(&some_class, title, url, icon_path, &bgdlid);
+    int res = scedownload_start(&some_class, title, url, icon_path, &bgdlid);
+    if (res >= 0) {
+      char export_cfg_path[128];
+      scbgdl_export_param_struct export_params;
+      export_params.magic = (BGVPK_MAGIC | BGVPK_CFG_VER);
+      export_params.target = install;
+      sceClibStrncpy(export_params.title_id, title_id, 11);
+      sceClibSnprintf(export_cfg_path, sizeof(export_cfg_path), "ux0:bgdl/t/%08x/scbgdl_param.ini", res);
+      int fd = sceIoOpen(export_cfg_path, SCE_O_WRONLY | SCE_O_TRUNC | SCE_O_CREAT, 0777);
+      if (fd < 0)
+        return fd;
+      int res = sceIoWrite(fd, &export_params, 16);
+      sceIoClose(fd);
+      if (res < 0)
+        return res;
+    }
+
+    return res;
 }
