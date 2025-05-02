@@ -111,12 +111,19 @@ static int ExportFilePatched(uint32_t* data) {
             ZipClose(handle);
             // Install/promote the app
             char title_id[12];
-            if (res == 0 && promoteApp(download_path, title_id) >= 0) {
-                notification_send(title_id, dl_title, 0x52, 0x3, dl_title);
+            if (res == 0) {
+                res =  promoteApp(download_path, title_id);
+                if (res >= 0) {
+                  notification_send(title_id, dl_title, 0x52, 0x3, dl_title);
+                } else {
+                  is_install_app = 0;
+                }
             } else {
-                notification_send(export_params.title_id, dl_title, 0x0, 0x3, dl_title);
+                is_install_app = 0;
             }
-        } else {
+        } 
+
+        if (!is_install_app){
             // Save the downloaded file to ux0:download/*
             char *ext = sceClibStrchr(file_name, '.');
             char short_name[256];

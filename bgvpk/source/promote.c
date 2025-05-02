@@ -1,7 +1,7 @@
 // Thanks to theflow0 for vitashell
 
-#include <psp2/promoterutil.h>
 #include <psp2/sysmodule.h>
+#include <psp2/kernel/threadmgr.h>
 #include "sha1.h"
 #include "head_bin.h"
 
@@ -164,6 +164,7 @@ int promoteApp(const char* path, char *title_id) {
     int pid = 0;
     if (sceAppMgrGetIdByName(&pid, title_id) >= 0 && pid != 0) {
       sceAppMgrDestroyAppByName(title_id);
+      sceKernelDelayThread(2000000);
     }
 
     sceSysmoduleLoadModuleInternal(SCE_SYSMODULE_INTERNAL_PROMOTER_UTIL);
