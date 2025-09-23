@@ -30,7 +30,7 @@ static unsigned char is_notification_enable = 1;
 
 int ToastPatch(void *off, unsigned int arg)
 {
-    if(!arg && off != NULL)
+    if(is_notification_enable && !arg && off != NULL)
     {
         char download_path[1024];
         sceClibSnprintf(download_path, sizeof(download_path), "ux0:bgdl/t/%08x/scbgdl_param.ini", *(uint32_t *)off);
@@ -114,7 +114,9 @@ static int ExportFilePatched(uint32_t* data) {
             if (res == 0) {
                 res =  promoteApp(download_path, title_id);
                 if (res >= 0) {
-                  notification_send(title_id, dl_title, 0x52, 0x3, dl_title);
+                  if (is_notification_enable) {
+                    notification_send(title_id, dl_title, 0x52, 0x3, dl_title);
+                  }
                 } else {
                   is_install_app = 0;
                 }
@@ -160,7 +162,9 @@ static int ExportFilePatched(uint32_t* data) {
             } else {
                 sceClibSnprintf(download_path, sizeof(download_path), "%s %s", dl_title, "下载失败");
             }
-            notification_send(export_params.title_id, download_path, 0x100, 0x2, dl_title);
+            if (is_notification_enable) {
+              notification_send(export_params.title_id, download_path, 0x100, 0x2, dl_title);
+            }
         }
     }
 
@@ -220,7 +224,9 @@ int module_start(SceSize args, void* argp) {
               default:
                 is_notification_enable = 0;
             }
-            taiGetModuleExportFunc("SceLsdb", 0xFFFFFFFF, 0x315B9FD6, (uintptr_t *)&sceLsdbSendNotification);
+            if (is_notification_enable) {
+              taiGetModuleExportFunc("SceLsdb", 0xFFFFFFFF, 0x315B9FD6, (uintptr_t *)&sceLsdbSendNotification);
+            }
         }
     } else
         return SCE_KERNEL_START_FAILED;
