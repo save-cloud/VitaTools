@@ -72,6 +72,8 @@ extern "C" {
 	
 #define printf(...) sceClibPrintf(__VA_ARGS__)
 
+void prevent_sleep_mode();
+
 typedef struct
 {
 	unsigned long version;
@@ -1135,6 +1137,7 @@ int ZipExtractCurrentFile(Zip *zip, int *nopath, const char *password, const cha
 		do
 		{
 		
+      prevent_sleep_mode();
 			err = ZipReadCurrentFile(zip, extractBuffer, remainingSize);
 
 			if(err < 0)
@@ -1147,6 +1150,7 @@ int ZipExtractCurrentFile(Zip *zip, int *nopath, const char *password, const cha
 			{
 				remainingSize = remainingSize - err;
 				if (remainingSize == 0){
+          prevent_sleep_mode();
 					fwrite(buffer, 1, buffersize, fout);
 					remainingSize = buffersize;
 					extractBuffer = buffer;
@@ -1187,11 +1191,13 @@ int ZipExtract(Zip* zip, const char *password, const char* path)
 
 	for(i = 0;i < gi.countentries;i++)
 	{
+    prevent_sleep_mode();
 		if(ZipExtractCurrentFile(zip, &nopath, password, path) != _ZIP_OK)
 			break;
 
 		if((i + 1) < gi.countentries)
 		{
+      prevent_sleep_mode();
 			err = ZipGotoNextFile(zip);
 
 			if(err != _ZIP_OK)

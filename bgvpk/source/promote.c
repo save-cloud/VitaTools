@@ -155,7 +155,6 @@ int makeHead(const char *path, char *titleid) {
 }
 
 int promoteApp(const char* path, char *title_id) {
-    sceClibPrintf("promote %s\n", path);
     int res = makeHead(path, title_id);
     if (res < 0)
         return res;

@@ -29,6 +29,11 @@ static const int BGDL_DETECT_CODE = 0x80101A09;
 static unsigned char is_download_enabler = 0;
 static unsigned char is_notification_enable = 1;
 
+void prevent_sleep_mode()
+{
+  sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
+}
+
 int ToastPatch(void *off, unsigned int arg)
 {
     if(is_notification_enable && !arg && off != NULL)
@@ -103,9 +108,6 @@ static int ExportFilePatched(uint32_t* data) {
         // the path of download file
         sceClibSnprintf(bgdl_path, sizeof(bgdl_path), "ux0:bgdl/t/%08x/%s", num, file_name);
 
-        // lock auto sleep
-        sceKernelPowerLock(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
-
         // Install the app
         if (is_install_app) {
             // Unzip the VPK to temp bgdl folder/X/ | Unzip the zip to ux0:data/
@@ -170,9 +172,6 @@ static int ExportFilePatched(uint32_t* data) {
               notification_send(export_params.title_id, download_path, 0x100, 0x2, dl_title);
             }
         }
-
-        // unlock auto sleep
-        sceKernelPowerUnlock(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
     }
 
     return res;
