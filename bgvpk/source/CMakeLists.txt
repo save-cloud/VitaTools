@@ -32,6 +32,7 @@ target_link_libraries(scbgdl
   SceKernelThreadMgr_stub
   SceAppMgr_stub
   SceShellSvc_stub_weak
+  SceProcessmgr_stub_weak
   z
 )
 

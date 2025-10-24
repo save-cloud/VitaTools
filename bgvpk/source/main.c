@@ -5,6 +5,7 @@
 #include <psp2/io/stat.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/modulemgr.h>
+#include <psp2/kernel/processmgr.h>
 
 #include <string.h>
 #include <stdarg.h>
@@ -102,6 +103,9 @@ static int ExportFilePatched(uint32_t* data) {
         // the path of download file
         sceClibSnprintf(bgdl_path, sizeof(bgdl_path), "ux0:bgdl/t/%08x/%s", num, file_name);
 
+        // lock auto sleep
+        sceKernelPowerLock(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
+
         // Install the app
         if (is_install_app) {
             // Unzip the VPK to temp bgdl folder/X/ | Unzip the zip to ux0:data/
@@ -123,7 +127,7 @@ static int ExportFilePatched(uint32_t* data) {
             } else {
                 is_install_app = 0;
             }
-        } 
+        }
 
         if (!is_install_app){
             // Save the downloaded file to ux0:download/*
@@ -166,6 +170,9 @@ static int ExportFilePatched(uint32_t* data) {
               notification_send(export_params.title_id, download_path, 0x100, 0x2, dl_title);
             }
         }
+
+        // unlock auto sleep
+        sceKernelPowerUnlock(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
     }
 
     return res;
