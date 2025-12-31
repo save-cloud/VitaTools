@@ -69,7 +69,7 @@ typedef struct shellsvc_init_struct {
     void* unk_ptr;
     uint32_t unk_1;// 1
     uint32_t size1;// 0x1E00
-    uint32_t size2;// 0x1E00 
+    uint32_t size2;// 0x1E00
     uint32_t unk_2;// 1
     uint32_t unk_3;// 0x0F00
     uint32_t unk_4;// 0x0F00
@@ -215,7 +215,7 @@ static int scedownload_start(scedownload_class* class, const char* title, const 
     params.state.unk_7 = 0x00000A0A;
 
     res = class->change_state(class->class_header->func_table, 0x12340007, 0, 0, params);
-    
+
     if (result < 0)
         return result;
 
@@ -251,11 +251,55 @@ int bgdl_init(const char *scbgdl_plugin) {	tai_module_args_t args;
     return -1;
 }
 
-// Queue a BG DL of [url] with title [title] and dl icon from [icon_path], returns bgdlid on success 
+static char **get_bgdl_list(int *count) {
+    char **list = NULL;
+    *count = 0;
+    SceUID dfd = sceIoDopen("ux0:bgdl/t/");
+    if (dfd < 0)
+        return NULL;
+    SceIoDirent dir;
+    while (sceIoDread(dfd, &dir) > 0) {
+        if (dir.d_name[0] == '.')
+            continue;
+        // if not a directory, skip
+        if (!(dir.d_stat.st_mode & SCE_S_IFDIR))
+            continue;
+        list = realloc(list, sizeof(char*) * (*count + 1));
+        list[*count] = strdup(dir.d_name);
+        (*count)++;
+    }
+    return list;
+}
+
+static void free_bgdl_list(char **list, int count) {
+  if (list == NULL) {
+    return;
+  }
+
+  for (int i = 0; i < count; i++) {
+    free(list[i]);
+  }
+  free(list);
+}
+
+// Queue a BG DL of [url] with title [title] and dl icon from [icon_path], returns bgdlid on success
 int bgdl_queue(int install, const char *title, const char *url, const char *icon_path, const char *title_id) {
     int bgdlid = 0;
+    int bgdl_count = 0;
+    char **bgdl_list = get_bgdl_list(&bgdl_count);
     int res = scedownload_start(&some_class, title, url, icon_path, &bgdlid);
     if (res >= 0) {
+      if (bgdl_list != NULL && bgdl_count > 0) {
+        char res_str[16];
+        sceClibSnprintf(res_str, sizeof(res_str), "%08x", res);
+        for (int i = 0; i < bgdl_count; i++) {
+          // already exists
+          if (sceClibStrcmp(bgdl_list[i], res_str) == 0) {
+            free_bgdl_list(bgdl_list, bgdl_count);
+            return -1;
+          }
+        }
+      }
       char export_cfg_path[128];
       scbgdl_export_param_struct export_params;
       export_params.magic = (BGVPK_MAGIC | BGVPK_CFG_VER);
@@ -263,13 +307,19 @@ int bgdl_queue(int install, const char *title, const char *url, const char *icon
       sceClibStrncpy(export_params.title_id, title_id, 11);
       sceClibSnprintf(export_cfg_path, sizeof(export_cfg_path), "ux0:bgdl/t/%08x/scbgdl_param.ini", res);
       int fd = sceIoOpen(export_cfg_path, SCE_O_WRONLY | SCE_O_TRUNC | SCE_O_CREAT, 0777);
-      if (fd < 0)
+      if (fd < 0) {
+        free_bgdl_list(bgdl_list, bgdl_count);
         return fd;
+      }
       int res = sceIoWrite(fd, &export_params, 16);
       sceIoClose(fd);
-      if (res < 0)
+      if (res < 0) {
+        free_bgdl_list(bgdl_list, bgdl_count);
         return res;
+      }
     }
+
+    free_bgdl_list(bgdl_list, bgdl_count);
 
     return res;
 }
