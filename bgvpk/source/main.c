@@ -49,6 +49,19 @@ int ToastPatch(void *off, unsigned int arg)
     return TAI_CONTINUE(int, ToastRef, off, arg);
 }
 
+static int append_chmod(const char *path, SceMode mode) {
+    SceIoStat stat;
+    memset(&stat, 0, sizeof(SceIoStat));
+
+    sceIoGetstat(path, &stat);
+    // 设置你想要修改的权限位
+    stat.st_mode |= mode;
+
+    // 第三个参数是 bitmask，告诉系统你要修改哪个属性
+    // SCE_CST_MODE 代表修改访问权限 (Access Mode)
+    return sceIoChstat(path, &stat, SCE_CST_MODE); 
+}
+
 static int ExportFilePatched(uint32_t* data) {
 
     int res = TAI_CONTINUE(int, ExportFileRef, data);
@@ -160,10 +173,11 @@ static int ExportFilePatched(uint32_t* data) {
 
                 count++;
             }
-            res = sceIoMkdir("ux0:download", 0006);
+            res = sceIoMkdir("ux0:download", 0777);
             if (res >= 0 || res == 0x80010011) {
                 sceIoRemove(download_path);
                 res = sceIoRename(bgdl_path, download_path);
+                append_chmod(download_path, SCE_S_IRWXU | SCE_S_IRWXS);
                 sceClibSnprintf(download_path, sizeof(download_path), "%s %s", dl_title, "下载成功");
             } else {
                 sceClibSnprintf(download_path, sizeof(download_path), "%s %s", dl_title, "下载失败");
